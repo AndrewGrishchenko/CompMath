@@ -17,7 +17,7 @@ double read_double();
 int read_int();
 
 std::string prompt_string(std::string msg);
-int prompt_int(std::string msg, bool newline = false);
+int prompt_int(std::string msg);
 double** prompt_augmented_matrix(std::string msg, int n);
 
 void print_augmented_matrix(int n, double** matrix);

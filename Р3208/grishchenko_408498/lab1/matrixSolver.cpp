@@ -61,7 +61,7 @@ double MatrixSolver::calc_determinant(int n, double** augmented_matrix) {
 }
 
 double* MatrixSolver::solve(int n, double** augmented_matrix) {
-    auto triangular = calc_triangular(n, augmented_matrix).second;
+    double** triangular = calc_triangular(n, augmented_matrix).second;
 
     double* solution = new double[n];
     for (int i = n - 1; i >= 0; --i) {
@@ -90,24 +90,28 @@ std::pair<double, double*> MatrixSolver::eigen_solve(int n, double** augmented_m
     return std::pair<double, double*>(eigen_determinant, eigen_solution.data());
 }
 
-double* MatrixSolver::calc_error(int n, double* solution1, double* solution2) {
-    double* error = new double[n];
+double* MatrixSolver::calc_residual(int n, double** augmented_matrix, double* solution) {
+    double* residual = new double[n];
     for (int i = 0; i < n; i++) {
-        error[i] = solution1[i] - solution2[i]; 
+        double s = 0;
+        for (int j = 0; j < n; j++) {
+            s += augmented_matrix[i][j] * solution[j];
+        }
+        residual[i] = s - augmented_matrix[i][n];
     }
-    return error;
+
+    return residual;
 }
 
 void MatrixSolver::print_system(int n, double** augmented_matrix) {
     std::cout << std::fixed << std::setprecision(1);
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            std::cout << std::setw(4) << (j == 0 ? augmented_matrix[i][j] : fabs(augmented_matrix[i][j])) << "x" << j + 1;
+            std::cout << std::setw(8) << (j == 0 ? augmented_matrix[i][j] : fabs(augmented_matrix[i][j])) << "x" << j + 1;
             if (j != n - 1) {
-                std::cout << (augmented_matrix[i][j+1] > 0 ? " +" : " -");
+                std::cout << std::setw(4) << (augmented_matrix[i][j+1] > 0 ? "+" : "-");
             }
         }
         std::cout << (augmented_matrix[i][n] > 0 ? " =  " : " = ") << augmented_matrix[i][n] << std::endl;
     }
-    std::cout << std::defaultfloat;
 }

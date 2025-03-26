@@ -51,13 +51,16 @@ std::string read_string() {
 
 double read_double() {
     std::string str;
-    std::cin >> str;
+    std::getline(std::cin, str);
 
     std::replace(str.begin(), str.end(), ',', '.');
     std::stringstream ss(str);
     
     double num;
     ss >> num;
+
+    if (!ss.eof()) exit_error("Слишком много аргументов");
+
     if (READ_MODE == 2) std::cout << num;
     return num;
 }
@@ -73,9 +76,8 @@ std::string prompt_string(std::string msg) {
     return read_string();
 }
 
-int prompt_int(std::string msg, bool newline) {
+int prompt_int(std::string msg) {
     std::cout << msg;
-    if (newline) std::cout << std::endl;
     
     int n = read_int();
     if (READ_MODE == 2) std::cout << std::endl;
@@ -87,14 +89,13 @@ double** prompt_augmented_matrix(std::string msg, int n) {
     
     bool flag = true;
     std::string str;
-    std::getline(std::cin, str);
 
     double** matrix = new double*[n];
     for (int i = 0; i < n; i++) {
         matrix[i] = new double[n+1];
 
         std::getline(std::cin, str);
-        if (str.empty() & flag) {
+        if (str.empty() && flag) {
             delete matrix[i], matrix;
             return generate_augmented_matrix(n);
         }

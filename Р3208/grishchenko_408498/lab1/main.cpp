@@ -34,9 +34,9 @@ int main() {
     std::cout << std::endl << "Решение системы через Eigen" << std::endl;
     print_vector("x", n, eigen_solution);
 
-    double* error = solver->calc_error(n, solution, eigen_solution);
-    std::cout << std::endl << "Невязка:" << std::endl;
-    print_vector("r", n, error);
+    double* residual = solver->calc_residual(n, augmented_matrix, solution);
+    std::cout << std::endl << "Невязка:" << std::endl << std::scientific;
+    print_vector("r", n, residual);
 
     delete solver;
     return 0;

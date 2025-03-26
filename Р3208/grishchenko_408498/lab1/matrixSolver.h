@@ -21,7 +21,7 @@ class MatrixSolver {
 
         std::pair<double, double*> eigen_solve(int n, double** augmented_matrix);
 
-        double* calc_error(int n, double* solution1, double* solution2);
+        double* calc_residual(int n, double** augmented_matrix, double* solution);
 
     private:
         double determinant_sign;
