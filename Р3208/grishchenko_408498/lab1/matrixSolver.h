@@ -10,34 +10,22 @@
 
 class MatrixSolver {
     public:
-        MatrixSolver(int n, double** matrix, double* b_vector);
-        MatrixSolver(int n, double** augmented_matrix);
+        MatrixSolver();
         ~MatrixSolver();
 
-        void parse(int n, double** matrix, double* b_vector);
-        void parse(int n, double** augmented_matrix);
-        void print_system();
+        void print_system(int n, double** augmented_matrix);
 
-        double** calc_triangular();
-        double calc_determinant();
-        double* solve();
+        std::pair<double, double**> calc_triangular(int n, double** augmented_matrix);
+        double calc_determinant(int n, double** augmented_matrix);
+        double* solve(int n, double** augmented_matrix);
 
-        std::pair<double, double*> eigen_solve();
+        std::pair<double, double*> eigen_solve(int n, double** augmented_matrix);
 
-        double* calc_error();
+        double* calc_error(int n, double* solution1, double* solution2);
 
     private:
-        int n;
-        double** matrix = nullptr;
-        double* b_vector = nullptr;
-
-        double** augmented_matrix = nullptr;
-        double** triangular = nullptr;
-
         double determinant_sign;
-        double determinant;
-        double* solution = nullptr;
-
+        
         double** copy_augmented(int n, double** source);
 
         Eigen::MatrixXd eigen_a;

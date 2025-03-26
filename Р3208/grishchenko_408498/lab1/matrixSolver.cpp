@@ -1,98 +1,8 @@
 #include "matrixSolver.h"
 
-MatrixSolver::MatrixSolver(int n, double** matrix, double* b_vector)
-    : n(n), matrix(matrix), b_vector(b_vector)
-{
-    augmented_matrix = new double*[n];
-    for (int i = 0; i < n; i++) {
-        augmented_matrix[i] = new double[n+1];
-        for (int j = 0; j < n; j++) augmented_matrix[i][j] = matrix[i][j];
-        augmented_matrix[i][n] = b_vector[i];
-    }
-}
+MatrixSolver::MatrixSolver() { }
 
-MatrixSolver::MatrixSolver(int n, double** augmented_matrix)
-    : n(n), augmented_matrix(augmented_matrix)
-{
-    matrix = new double*[n];
-    b_vector = new double[n];
-    for (int i = 0; i < n; i++) {
-        matrix[i] = new double[n];
-        for (int j = 0; j < n; j++) matrix[i][j] = augmented_matrix[i][j];
-        b_vector[i] = augmented_matrix[i][n];
-    }
-}
-
-MatrixSolver::~MatrixSolver()
-{
-    if (matrix != nullptr) {
-        for (int i = 0; i < n; ++i) {
-            delete[] matrix[i];
-        }
-        delete[] matrix;
-        matrix = nullptr;
-    }
-
-    if (b_vector != nullptr) {
-        delete[] b_vector;
-        b_vector = nullptr;
-    }
-
-    if (augmented_matrix != nullptr) {
-        for (int i = 0; i < n; ++i) {
-            delete[] augmented_matrix[i];
-        }
-        delete[] augmented_matrix;
-        augmented_matrix = nullptr;
-    }
-
-    if (triangular != nullptr) {
-        for (int i = 0; i < n; ++i) {
-            delete[] triangular[i];
-        }
-        delete[] triangular;
-        triangular = nullptr;
-    }
-
-    if (solution != nullptr) {
-        delete[] solution;
-        solution = nullptr;
-    }
-}
-
-void MatrixSolver::parse(int n, double** matrix, double* b_vector) {
-    this->n = n;
-    this->matrix = matrix;
-    this->b_vector = b_vector;
-
-    augmented_matrix = new double*[n];
-    for (int i = 0; i < n; i++) {
-        augmented_matrix[i] = new double[n+1];
-        for (int j = 0; j < n; j++) augmented_matrix[i][j] = matrix[i][j];
-        augmented_matrix[i][n] = b_vector[i];
-    }
-
-    triangular = nullptr;
-    solution = nullptr;
-    eigen_solution.resize(0);
-}
-
-void MatrixSolver::parse(int n, double** augmented_matrix) {
-    this->n = n;
-    this->augmented_matrix = augmented_matrix;
-
-    matrix = new double*[n];
-    b_vector = new double[n];
-    for (int i = 0; i < n; i++) {
-        matrix[i] = new double[n];
-        for (int j = 0; j < n; j++) matrix[i][j] = augmented_matrix[i][j];
-        b_vector[i] = augmented_matrix[i][n];
-    }
-
-    triangular = nullptr;
-    solution = nullptr;
-    eigen_solution.resize(0);
-}
+MatrixSolver::~MatrixSolver() { }
 
 double** MatrixSolver::copy_augmented(int n, double** matrix) {
     double** copy = new double*[n];
@@ -103,10 +13,14 @@ double** MatrixSolver::copy_augmented(int n, double** matrix) {
     return copy;
 }
 
-double** MatrixSolver::calc_triangular() {
-    determinant_sign = 1.0;
+std::pair<double, double**> MatrixSolver::calc_triangular(int n, double** augmented_matrix) {
+    double determinant_sign = 1.0;
 
-    triangular = copy_augmented(n, augmented_matrix);
+    double** triangular = new double*[n];
+    for (int i = 0; i < n; i++) {
+        triangular[i] = new double[n+1];
+        for (int j = 0; j <= n; j++) triangular[i][j] = augmented_matrix[i][j];
+    }
 
     for (int j = 0; j < n; ++j) {
         int pivot_row = j;
@@ -133,23 +47,23 @@ double** MatrixSolver::calc_triangular() {
             }
         }
     }
-    return triangular;
+    return std::pair<double, double**>(determinant_sign, triangular);
 }
 
-double MatrixSolver::calc_determinant() {
-    if (triangular == nullptr) calc_triangular();
+double MatrixSolver::calc_determinant(int n, double** augmented_matrix) {
+    auto [determinant_sign, triangular] = calc_triangular(n, augmented_matrix);
     
-    determinant = determinant_sign;
+    double determinant = determinant_sign;
     for (int i = 0; i < n; ++i) {
         determinant *= triangular[i][i];
     }
     return determinant;
 }
 
-double* MatrixSolver::solve() {
-    if (triangular == nullptr) calc_triangular();
+double* MatrixSolver::solve(int n, double** augmented_matrix) {
+    auto triangular = calc_triangular(n, augmented_matrix).second;
 
-    solution = new double[n];
+    double* solution = new double[n];
     for (int i = n - 1; i >= 0; --i) {
         double sum = 0.0;
         for (int j = i + 1; j < n; ++j) {
@@ -160,7 +74,7 @@ double* MatrixSolver::solve() {
     return solution;
 }
 
-std::pair<double, double*> MatrixSolver::eigen_solve() {
+std::pair<double, double*> MatrixSolver::eigen_solve(int n, double** augmented_matrix) {
     eigen_a.resize(n, n);
     eigen_b.resize(n);
 
@@ -176,27 +90,24 @@ std::pair<double, double*> MatrixSolver::eigen_solve() {
     return std::pair<double, double*>(eigen_determinant, eigen_solution.data());
 }
 
-double* MatrixSolver::calc_error() {
-    if (solution == nullptr) solve();
-    if (eigen_solution.size() == 0) eigen_solve();
-
+double* MatrixSolver::calc_error(int n, double* solution1, double* solution2) {
     double* error = new double[n];
     for (int i = 0; i < n; i++) {
-        error[i] = solution[i] - eigen_solution(i); 
+        error[i] = solution1[i] - solution2[i]; 
     }
     return error;
 }
 
-void MatrixSolver::print_system() {
+void MatrixSolver::print_system(int n, double** augmented_matrix) {
     std::cout << std::fixed << std::setprecision(1);
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            std::cout << std::setw(4) << (j == 0 ? matrix[i][j] : fabs(matrix[i][j])) << "x" << j + 1;
+            std::cout << std::setw(4) << (j == 0 ? augmented_matrix[i][j] : fabs(augmented_matrix[i][j])) << "x" << j + 1;
             if (j != n - 1) {
-                std::cout << (matrix[i][j+1] > 0 ? " +" : " -");
+                std::cout << (augmented_matrix[i][j+1] > 0 ? " +" : " -");
             }
         }
-        std::cout << (b_vector[i] > 0 ? " =  " : " = ") << b_vector[i] << std::endl;
+        std::cout << (augmented_matrix[i][n] > 0 ? " =  " : " = ") << augmented_matrix[i][n] << std::endl;
     }
     std::cout << std::defaultfloat;
 }
