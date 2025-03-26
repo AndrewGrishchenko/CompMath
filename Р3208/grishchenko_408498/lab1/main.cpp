@@ -11,7 +11,7 @@ int main() {
     int n = prompt_int("Введите n: ");
     if (n <= 0) exit_error("n должно быть >= 1");
 
-    double** augmented_matrix = prompt_augmented_matrix("Введите построчно расширенную матрицу", n);
+    double** augmented_matrix = prompt_augmented_matrix("Введите построчно расширенную матрицу (оставьте строку пустой для генерации случайной)", n);
 
     MatrixSolver* solver = new MatrixSolver();
     std::cout << std::endl << "СЛАУ:" << std::endl;

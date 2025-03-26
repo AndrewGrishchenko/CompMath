@@ -50,8 +50,14 @@ std::string read_string() {
 }
 
 double read_double() {
+    std::string str;
+    std::cin >> str;
+
+    std::replace(str.begin(), str.end(), ',', '.');
+    std::stringstream ss(str);
+    
     double num;
-    std::cin >> num;
+    ss >> num;
     if (READ_MODE == 2) std::cout << num;
     return num;
 }
@@ -79,6 +85,7 @@ int prompt_int(std::string msg, bool newline) {
 double** prompt_augmented_matrix(std::string msg, int n) {
     std::cout << msg << std::endl;
     
+    bool flag = true;
     std::string str;
     std::getline(std::cin, str);
 
@@ -87,13 +94,36 @@ double** prompt_augmented_matrix(std::string msg, int n) {
         matrix[i] = new double[n+1];
 
         std::getline(std::cin, str);
+        if (str.empty() & flag) {
+            delete matrix[i], matrix;
+            return generate_augmented_matrix(n);
+        }
+
+        std::replace(str.begin(), str.end(), ',', '.');
         std::stringstream ss(str);
         for (int j = 0; j < n + 1; j++) {
             if (!(ss >> matrix[i][j])) exit_error("Не хватает элементов строки");
         }
         if (!ss.eof()) exit_error("Слишком много элементов строки");
         if (READ_MODE == 2) std::cout << str << std::endl;
+        flag = false;
     }
+    return matrix;
+}
+
+double** generate_augmented_matrix(int n) {
+    std::cout << "Генерация случайной матрицы:" << std::endl;
+    std::srand(std::time(0));
+
+    double** matrix = new double*[n];
+    for (int i = 0; i < n; i++) {
+        matrix[i] = new double[n+1];
+        for (int j = 0; j <= n; j++) 
+            matrix[i][j] = (std::rand() % 101) + (std::rand() % 1000) / 1000.0;
+    }
+
+    print_augmented_matrix(n, matrix);
+
     return matrix;
 }
 

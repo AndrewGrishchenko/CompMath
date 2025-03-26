@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include "math.h"
 
 void exit_error(std::string msg);
 bool file_exists(std::string filename);
+double** generate_augmented_matrix(int n);
 
 void select_input_mode();
 
