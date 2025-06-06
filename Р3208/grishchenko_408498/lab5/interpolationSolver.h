@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 
+#include "utils.hpp"
+
 template<typename T>
 class Equation {
     public:
@@ -25,7 +27,7 @@ class Equation {
 
 enum class InterpolationMethod {
     Lagrange,
-    NetwonDivided,
+    NewtonDivided,
     Gauss
 };
 
@@ -51,14 +53,15 @@ class InterpolationSolver {
         InterpolationSolver();
 
         InterpolationResult solve(const std::vector<double>& x, const std::vector<double>& y, double x0, InterpolationMethod method);
-
     private:
         InterpolationResult solveLagrange(const std::vector<double>& x, const std::vector<double>& y, double x0);
         InterpolationResult solveNewtonDivided(const std::vector<double>& x, const std::vector<double>& y, double x0);
         InterpolationResult solveGauss(const std::vector<double>& x, const std::vector<double>& y, double x0);
 
+        int findClosestIndex(const std::vector<double>& x, double x0);
+        int fact(int n);
         std::vector<std::vector<double>> dividedDifferencesTable(const std::vector<double>& x, const std::vector<double>& y);
-        std::vector<std::vector<double>> finiteDifferencesTable(const std::vector<double>& x, const std::vector<double>& y);
+        std::vector<std::vector<double>> finiteDifferencesTable(const std::vector<double>& y);
 };
 
 #endif

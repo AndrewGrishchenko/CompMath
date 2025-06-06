@@ -16,7 +16,7 @@ int main() {
     };
     const MethodChoice<InterpolationMethod> ims[] = {
         { InterpolationMethod::Lagrange, "Многочлен Лагранжа" },
-        { InterpolationMethod::NetwonDivided, "Многочлен Ньютона с разделенными разностями" },
+        { InterpolationMethod::NewtonDivided, "Многочлен Ньютона с разделенными разностями" },
         { InterpolationMethod::Gauss, "Многочлен Гаусса" }
     };
 
@@ -24,8 +24,6 @@ int main() {
     std::string f_name;
     std::vector<std::pair<double, double>> intervals;
     std::vector<std::vector<std::pair<double, double>>> points;
-    std::vector<std::pair<double, double>> func_points;
-    std::pair<double, double> interpolation_point;
 
     InterpolationMethod method = promptOptions("Выберите метод", ims).method;
     int mode = promptIndexOptions("Выберите режим", modes);

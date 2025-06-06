@@ -170,7 +170,7 @@ T prompt(const std::string& msg, std::optional<T> default_value = std::nullopt) 
     return read_cli<T>(default_value);
 }
 
-void printTable(const std::vector<std::string>& header, const std::vector<std::vector<double>>& data, int colWidth = 15) {
+inline void printTable(const std::vector<std::string>& header, const std::vector<std::vector<double>>& data, int colWidth = 15) {
     for (const auto& h : header) {
         std::cout << std::setw(colWidth) << h;
     }
@@ -190,7 +190,7 @@ void printTable(const std::vector<std::string>& header, const std::vector<std::v
 
 //==plot==//
 
-void make_plot(std::vector<std::function<double(double)>> f, std::vector<std::pair<double, double>> intervals, std::vector<std::vector<std::pair<double, double>>> points, std::vector<std::string> legend) {
+inline void make_plot(std::vector<std::function<double(double)>> f, std::vector<std::pair<double, double>> intervals, std::vector<std::vector<std::pair<double, double>>> points, std::vector<std::string> legend) {
     using namespace sciplot;
 
     int POINT_COUNT = 1000;
@@ -267,12 +267,30 @@ void make_plot(std::vector<std::function<double(double)>> f, std::vector<std::pa
 //==utility==//
 
 template<typename T1, typename T2>
-std::vector<std::pair<T1, T2>> vec2vecpair(std::vector<T1> vec1, std::vector<T2> vec2) {
+inline std::vector<std::pair<T1, T2>> vec2vecpair(std::vector<T1> vec1, std::vector<T2> vec2) {
     if (vec1.size() != vec2.size()) throw std::runtime_error("vec1 size doesnt meet vec2 size");
     
     std::vector<std::pair<T1, T2>> result(vec1.size());
     for (int i = 0; i < vec1.size(); i++) {
         result[i] = {vec1[i], vec2[i]};
+    }
+
+    return result;
+}
+
+template<typename T>
+inline std::vector<std::vector<T>> transposeMatrix(const std::vector<std::vector<T>>& mat) {
+    size_t maxCols = 0;
+    for (const auto& row : mat) {
+        maxCols = std::max(maxCols, row.size());
+    }
+
+    std::vector<std::vector<T>> result(maxCols);
+
+    for (size_t i = 0; i < mat.size(); i++) {
+        for (size_t j = 0; j < mat[i].size(); j++) {
+            result[j].push_back(mat[i][j]);
+        }
     }
 
     return result;

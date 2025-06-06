@@ -6,7 +6,7 @@ InterpolationResult InterpolationSolver::solve(const std::vector<double>& x, con
     switch (method) {
         case InterpolationMethod::Lagrange:
             return solveLagrange(x, y, x0);
-        case InterpolationMethod::NetwonDivided:
+        case InterpolationMethod::NewtonDivided:
             return solveNewtonDivided(x, y, x0);
         case InterpolationMethod::Gauss:
             return solveGauss(x, y, x0);
@@ -19,9 +19,9 @@ InterpolationResult InterpolationSolver::solveLagrange(const std::vector<double>
     int n = x.size();
     double result = 0.0;
 
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; i++) {
         double term = y[i];
-        for (int j = 0; j < n; ++j) {
+        for (int j = 0; j < n; j++) {
             if (j != i)
                 term *= (x0 - x[j]) / (x[i] - x[j]);
         }
@@ -41,12 +41,14 @@ InterpolationResult InterpolationSolver::solveLagrange(const std::vector<double>
 InterpolationResult InterpolationSolver::solveNewtonDivided(const std::vector<double>& x, const std::vector<double>& y, double x0) {
     auto table = dividedDifferencesTable(x, y);
     int n = x.size();
-    double result = table[0][0];
+    double result = 0;
 
-    double product = 1.0;
-    for (int order = 1; order < n; ++order) {
-        product *= (x0 - x[order-1]);
-        result += table[0][order] * product;
+    for (int i = 0; i < table.size(); i++) {
+        double part = table[i][0];
+        for (int j = 0; j < i; j++) {
+            part *= (x0 - x[j]);
+        }
+        result += part;
     }
 
     std::vector<std::string> header = {"x", "y"};
@@ -54,79 +56,113 @@ InterpolationResult InterpolationSolver::solveNewtonDivided(const std::vector<do
         header.push_back("f[...,...]");
     }
 
-    return {result, header, table, "Таблица разделенных разностей"};
+    table.insert(table.begin(), x);
+
+    return {result, header, transposeMatrix<double>(table), "Таблица разделенных разностей"};
 }
 
 InterpolationResult InterpolationSolver::solveGauss(const std::vector<double>& x, const std::vector<double>& y, double x0) {
-    int n = x.size();
+    size_t n = x.size();
+    auto table = finiteDifferencesTable(y);
 
+    int center = 0;
+    if (n % 2 == 0) {
+        int lmid = n / 2 - 1;
+        center = std::abs(x[lmid] - x0) < std::abs(x[lmid+1] - x0) ? lmid + 1: lmid;
+    } else {
+        center = n / 2;
+    }
+    
     double h = x[1] - x[0];
-    for (int i = 2; i < n; ++i) {
-        if (abs((x[i] - x[i-1]) - h) > 1e-12) {
-            std::cerr << "Error: non-uniform step for Gauss interpolation\n";
-            return {0, {}, {}};
+    double t = (x0 - x[center]) / h;
+    double result = table[0][center];
+
+    for (int i = 1; i < table.size(); i++) {
+        int idx;
+        double coeff;
+
+        if (x0 >= x[center]) {
+            if (i % 2 == 1)
+                idx = center - (i / 2);
+            else
+                idx = center - (i / 2);
+
+            if (idx < 0 || idx >= table[i].size()) break;
+
+            coeff = 1.0;
+            for (int j = 0; j < i; j++) {
+                if (j % 2 != 0) coeff *= (t - (j / 2 + 1));
+                else coeff *= (t + j / 2);
+            }
+        } else {
+            if (i % 2 != 0)
+                idx = center - (i / 2) - 1;
+            else
+                idx = center - (i / 2);
+
+            if (idx < 0 || idx >= table[i].size()) break;
+
+            coeff = 1.0;
+            for (int j = 0; j < i; j++) {
+                if (j % 2 != 0) coeff *= (t + j / 2 + 1);
+                else coeff *= (t - j / 2);
+            }
         }
+        result += coeff * table[i][idx] / fact(i);
     }
 
-    auto table = finiteDifferencesTable(x, y);
-
-    double t = (x0 - x[0]) / h;
-
-    double result = y[0];
-    double term = 1.0;
-
-    double factorial = 1.0;
-
-    for (int order = 1; order < n; order++) {
-        term *= (t - (order - 1));
-        factorial *= order;
-        result += (term / factorial) * table[0][order];
-    }
 
     std::vector<std::string> header = {"x", "y"};
     for (int i = 1; i < x.size(); i++) {
         header.push_back("Δ^" + std::to_string(i));
     }
 
-    return {result, header, table, "Таблица конечных разностей"};
+    table.insert(table.begin(), x);
+
+    return {result, header, transposeMatrix<double>(table), "Таблица конечных разностей"};
+}
+
+int InterpolationSolver::fact(int n) {
+    return (n <= 1) ? 1 : n * fact(n - 1);
 }
 
 std::vector<std::vector<double>> InterpolationSolver::dividedDifferencesTable(const std::vector<double>& x, const std::vector<double>& y) {
-    int n = x.size();
+    size_t n = x.size();
     std::vector<std::vector<double>> table(n);
 
+    table[0] = y;
 
-
-    for (int i = 0; i < n; ++i) {
-        table[i].push_back(x[i]);
-        table[i].push_back(y[i]);
-    }
-
-    for (int order = 1; order < n; ++order) {
-        for (int i = 0; i < n - order; ++i) {
-            double numerator = table[i+1][order-1] - table[i][order-1];
-            double denominator = x[i+order] - x[i];
-            table[i].push_back(numerator / denominator);
+    for (size_t i = 1; i < n; i++) {
+        for (size_t j = 0; j < n - i; j++) {
+            table[i].push_back((table[i-1][j+1] - table[i-1][j]) / (x[i+j] - x[j]));
         }
     }
+
     return table;
 }
 
-std::vector<std::vector<double>> InterpolationSolver::finiteDifferencesTable(const std::vector<double>& x, const std::vector<double>& y) {
-    int n = y.size();
+int InterpolationSolver::findClosestIndex(const std::vector<double>& x, double x0) {
+    if (x.size() % 2 == 0) {
+        int lmid = x.size() / 2 - 1;
+        return std::abs(x[lmid] - x0) < std::abs(x[lmid+1] - x0) ? lmid + 1: lmid;
+    } else {
+        return x.size() / 2;
+    }
+
+}
+
+std::vector<std::vector<double>> InterpolationSolver::finiteDifferencesTable(const std::vector<double>& y) {
+    size_t n = y.size();
     std::vector<std::vector<double>> table(n);
 
-    for (int i = 0; i < n; ++i) {
-        table[i].push_back(x[i]);
-        table[i].push_back(y[i]);
-    }
+    table[0] = y;
 
-    for (int order = 1; order < n; ++order) {
-        for (int i = 0; i < n - order; ++i) {
-            double diff = table[i+1][order-1] - table[i][order-1];
-            table[i].push_back(diff);
+    for (size_t i = 1; i < n; i++) {
+        for (size_t j = 0; j < n - i; j++) {
+            table[i].push_back(table[i-1][j+1] - table[i-1][j]);
         }
     }
+
     return table;
 }
 
